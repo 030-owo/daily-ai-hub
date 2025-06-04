@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>每日新知</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; }
+    #content { font-size: 1.5em; margin-bottom: 10px; }
+    #note { color: gray; }
+  </style>
+</head>
+<body>
+  <h1>每日新知</h1>
+  <div id="content">載入中...</div>
+  <div id="note"></div>
+  <script>
+    async function loadDaily() {
+      const url = 'https://api.allorigins.win/raw?url=https://open.iciba.com/dsapi/';
+      try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+        document.getElementById('content').textContent = data.content;
+        document.getElementById('note').textContent = data.note;
+      } catch (err) {
+        document.getElementById('content').textContent = '無法取得今日內容。';
+      }
+    }
+    loadDaily();
+  </script>
+</body>
+</html>
