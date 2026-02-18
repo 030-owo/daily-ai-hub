@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>冰箱庫存系統管理介面</title>
+    <style>
+      body {
+        font-family: "Noto Sans TC", Arial, sans-serif;
+        background: #f5f7fb;
+        margin: 0;
+        padding: 24px;
+      }
+      .card {
+        max-width: 720px;
+        background: #fff;
+        border-radius: 10px;
+        padding: 24px;
+        margin: 0 auto;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 22px;
+      }
+      .desc {
+        color: #666;
+        margin-bottom: 18px;
+      }
+      label {
+        display: block;
+        font-weight: bold;
+        margin-top: 14px;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px;
+        border: 1px solid #d4d7dd;
+        border-radius: 8px;
+        margin-top: 6px;
+      }
+      .hint {
+        color: #7a7a7a;
+        font-size: 13px;
+      }
+      button {
+        margin-top: 16px;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .btn-primary {
+        background: #1a73e8;
+        color: #fff;
+      }
+      .btn-secondary {
+        background: #34a853;
+        color: #fff;
+        margin-left: 8px;
+      }
+      .status {
+        margin-top: 16px;
+        padding: 10px;
+        border-radius: 8px;
+        display: none;
+      }
+      .ok {
+        background: #e8f5e9;
+        color: #1b5e20;
+      }
+      .err {
+        background: #ffebee;
+        color: #b71c1c;
+      }
+      ul {
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>LINE Bot 冰箱庫存系統</h1>
+      <p class="desc">請在此設定 Script Properties，並初始化 Google Sheet 分頁與表頭。</p>
+
+      <label for="spreadsheetId">Spreadsheet ID</label>
+      <input id="spreadsheetId" placeholder="貼上 Google Sheet ID" />
+
+      <label for="lineToken">LINE Channel Access Token</label>
+      <input id="lineToken" type="password" placeholder="貼上 LINE access token" />
+
+      <label for="lineSecret">LINE Channel Secret</label>
+      <input id="lineSecret" type="password" placeholder="貼上 LINE channel secret" />
+
+      <p class="hint">安全性說明：金鑰儲存在 PropertiesService，不會硬編碼在程式碼中。</p>
+
+      <div>
+        <button class="btn-primary" onclick="saveSettings()">儲存設定</button>
+        <button class="btn-secondary" onclick="initializeSheets()">初始化 Sheets</button>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <h3>目前狀態</h3>
+      <ul>
+        <li id="stateSpreadsheet">Spreadsheet ID：讀取中...</li>
+        <li id="stateToken">LINE Token：讀取中...</li>
+        <li id="stateSecret">LINE Secret：讀取中...</li>
+      </ul>
+    </div>
+
+    <script>
+      function showStatus(message, ok) {
+        const el = document.getElementById('status');
+        el.style.display = 'block';
+        el.className = `status ${ok ? 'ok' : 'err'}`;
+        el.textContent = message;
+      }
+
+      function loadSettings() {
+        google.script.run
+          .withSuccessHandler((data) => {
+            document.getElementById('spreadsheetId').value = data.spreadsheetId || '';
+            document.getElementById('stateSpreadsheet').textContent =
+              `Spreadsheet ID：${data.spreadsheetId ? '已設定' : '未設定'}`;
+            document.getElementById('stateToken').textContent =
+              `LINE Token：${data.lineTokenSet ? '已設定' : '未設定'}`;
+            document.getElementById('stateSecret').textContent =
+              `LINE Secret：${data.lineSecretSet ? '已設定' : '未設定'}`;
+          })
+          .withFailureHandler((err) => showStatus(`讀取失敗：${err.message}`, false))
+          .getSettings();
+      }
+
+      function saveSettings() {
+        const payload = {
+          spreadsheetId: document.getElementById('spreadsheetId').value,
+          lineChannelAccessToken: document.getElementById('lineToken').value,
+          lineChannelSecret: document.getElementById('lineSecret').value,
+        };
+
+        google.script.run
+          .withSuccessHandler((msg) => {
+            showStatus(msg, true);
+            loadSettings();
+            document.getElementById('lineToken').value = '';
+            document.getElementById('lineSecret').value = '';
+          })
+          .withFailureHandler((err) => showStatus(`儲存失敗：${err.message}`, false))
+          .saveSettings(payload);
+      }
+
+      function initializeSheets() {
+        google.script.run
+          .withSuccessHandler((msg) => showStatus(msg, true))
+          .withFailureHandler((err) => showStatus(`初始化失敗：${err.message}`, false))
+          .initializeSheets();
+      }
+
+      loadSettings();
+    </script>
+  </body>
+</html>
